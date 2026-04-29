@@ -1,0 +1,11 @@
+// Allow wheel-group users to mount drives and unlock encrypted volumes
+// without a password prompt. Without this, every removable drive mount
+// triggers a pkexec dialog.
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
+         action.id == "org.freedesktop.udisks2.filesystem-mount" ||
+         action.id == "org.freedesktop.udisks2.encrypted-unlock-system") &&
+        subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});

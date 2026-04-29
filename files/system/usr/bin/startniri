@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Niri session launcher.
+# Noctalia registers itself via XDG autostart, so niri-session picks it up
+# automatically — no explicit spawn needed here.
+exec niri-session

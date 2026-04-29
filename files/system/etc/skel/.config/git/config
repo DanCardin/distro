@@ -1,0 +1,45 @@
+[user]
+	email = ddcardin@gmail.com
+	name = DanCardin
+	signingKey = id_rsa
+
+[alias]
+	shame = blame -w -M
+
+[core]
+	editor = nvim
+    pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[pull]
+	rebase = true
+
+[sequence]
+	editor = interactive-rebase-tool
+
+[delta]
+	features = line-numbers decorations
+	plus-style = "syntax #012800"
+    minus-style = "syntax #340001"
+    syntax-theme = Monokai Extended
+    navigate = true
+
+[init]
+	defaultBranch = main
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+
+[gpg]
+	format = ssh
+
+[interactive-rebase-tool]
+	inputMoveSelectionDown = J
+	inputMoveSelectionUp = K
+	inputMoveUp = k
+	inputMoveDown = j

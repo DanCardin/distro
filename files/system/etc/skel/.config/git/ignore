@@ -1,0 +1,18 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Project
+Session.vim
+shell.nix
+.envrc
+.env*
+.direnv/
+.venv
+
+.mypy_cache/
+
+backups/
+config.databudgie.yml
+
+**/.claude/settings.local.json

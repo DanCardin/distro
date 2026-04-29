@@ -1,0 +1,235 @@
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+name: distro
+description: framework
+base-image: ghcr.io/ublue-os/base-main
+image-version: 44
+
+modules:
+  # ── Image signing ────────────────────────────────────────────────────────────
+  # Sets up cosign policy so rpm-ostree/bootc can verify image integrity.
+  - type: signing
+
+  # ── OS identity ──────────────────────────────────────────────────────────────
+  - type: os-release
+    properties:
+      NAME: distro
+      VARIANT: framework
+
+  # ── Terra repo (Noctalia) ────────────────────────────────────────────────────
+  # Terra is Fyra Labs' repo; it ships noctalia-shell and the QuickShell runtime.
+  # This script follows the official install method (installs terra-release, which
+  # sets up the persistent repo file and GPG key).
+  - type: script
+    scripts:
+      - setup-terra.sh
+
+  # ── Packages ─────────────────────────────────────────────────────────────────
+  - type: dnf
+    repos:
+      # RPMFusion free + nonfree: codec support, steam-devices, etc.
+      nonfree: rpmfusion
+    install:
+      packages:
+        # ── Compositor ─────────────────────────────────────────────────────────
+        - niri
+        - xwayland-satellite          # rootless Xwayland for legacy X11 apps
+
+        # ── Noctalia shell ─────────────────────────────────────────────────────
+        # Handles: bar, launcher, lock screen, idle, notifications, wallpaper,
+        # OSD, widgets, dock, and multi-monitor. Installed via Terra (setup above).
+        - noctalia-shell
+        - brightnessctl               # laptop backlight control (Noctalia dep)
+        - ImageMagick                 # wallpaper processing (Noctalia dep)
+        - python3                     # template processing (Noctalia dep)
+        - git                         # plugin/update support (Noctalia dep)
+        - cliphist                    # clipboard history (Noctalia dep)
+        - wlsunset                    # night light / colour temperature (Noctalia dep)
+
+        # ── XDG Desktop Portals ────────────────────────────────────────────────
+        # The niri-portals.conf file (deployed below) routes each portal to the right backend.
+        - xdg-desktop-portal
+        - xdg-desktop-portal-gtk      # file picker, colours, settings, most things
+        - xdg-desktop-portal-wlr      # screenshare / screencopy for wlroots compositors
+
+        # ── Display manager ────────────────────────────────────────────────────
+        - sddm
+        - sddm-themes
+        - qt5-qtgraphicaleffects
+        - qt5-qtquickcontrols2
+
+        # ── Secrets / keyring ──────────────────────────────────────────────────
+        # gnome-keyring handles Secret Service API + SSH agent.
+        # PAM integration (deployed below) auto-unlocks on SDDM login and
+        # sets SSH_AUTH_SOCK, replacing the fish-ssh-agent plugin.
+        - gnome-keyring
+        - libsecret
+
+        # ── Audio ──────────────────────────────────────────────────────────────
+        - pipewire
+        - pipewire-alsa
+        - pipewire-pulseaudio
+        - wireplumber
+        - pamixer                     # CLI volume control (used by Noctalia OSD)
+        - pavucontrol                 # GUI audio mixer for when you need it
+
+        # ── Screenshots ────────────────────────────────────────────────────────
+        - grim
+        - slurp
+
+        # ── Wayland + Qt compatibility ─────────────────────────────────────────
+        - qt5-qtwayland
+        - qt6-qtwayland
+        - xdg-utils
+
+        # ── Authentication agent ───────────────────────────────────────────────
+        # polkit-gnome registers an XDG autostart entry; niri-session picks it
+        # up automatically so GUI sudo prompts work out of the box.
+        - polkit
+        - xfce-polkit                 # polkit agent for non-GNOME sessions (replaces polkit-gnome on F42)
+
+        # ── Networking ─────────────────────────────────────────────────────────
+        - NetworkManager-openvpn
+        - NetworkManager-openconnect
+
+        # ── Bluetooth ──────────────────────────────────────────────────────────
+        - bluez
+        - blueman
+
+        # ── Power management ───────────────────────────────────────────────────
+        # tuned handles the actual power profiles; tuned-ppd exposes them via
+        # the standard power-profiles-daemon DBus API that Noctalia queries.
+        - tuned
+        - tuned-ppd
+        - upower
+        - powerstat
+
+        # ── Intel GPU: Panther Lake (Xe3 iGPU, xe DRM driver) ─────────────────
+        - intel-media-driver          # VA-API hardware video decode (iHD)
+        - libva-utils                 # `vainfo` to verify VA-API is working
+
+        # ── Fingerprint reader ─────────────────────────────────────────────────
+        - fprintd
+
+        # ── File management ────────────────────────────────────────────────────
+        - thunar
+        - thunar-archive-plugin
+        - thunar-volman
+        - file-roller                 # archive GUI (integrates with thunar-archive-plugin)
+        - udisks2                     # removable drive mount daemon
+
+        - gvfs
+        - gvfs-mtp                    # Android / MTP devices
+        - gvfs-smb                    # Samba / network shares
+        - gvfs-gphoto2                # cameras
+
+        # ── Containers ─────────────────────────────────────────────────────────
+        - distrobox
+
+        # ── Shell + CLI tools ──────────────────────────────────────────────────
+        - fish
+        - tmux
+        - atuin                       # shell history sync
+        - starship                    # shell prompt
+        - zoxide                      # smart cd (aliased as m)
+        - eza                         # better ls
+        - bat                         # better cat / man pager
+        - delta                       # better diff / git pager
+        - dust                        # better du
+        - ripgrep                     # better grep (aliased as ag)
+
+        # ── System utilities ───────────────────────────────────────────────────
+        - just                        # task runner (ublue convention; see justfile)
+        - steam-devices               # controller / gamepad udev rules
+
+        # ── Fonts ──────────────────────────────────────────────────────────────
+        - google-noto-fonts-common
+        - google-noto-emoji-fonts
+        - fontawesome-fonts
+        - jetbrains-mono-fonts
+        - adobe-source-code-pro-fonts
+        # For Nerd Font icon glyphs (used by many shell/bar themes), install
+        # via brew post-boot:
+        #   brew install --cask font-symbols-only-nerd-font
+        #   brew install --cask font-sauce-code-pro-nerd-font  # Source Code Pro + Nerd glyphs
+
+        # ── Icons ──────────────────────────────────────────────────────────────
+        - papirus-icon-theme
+        - hicolor-icon-theme
+
+  # ── keyd (kernel-level key remapper) ─────────────────────────────────────────
+  # Not in standard Fedora repos; requires the alternateved COPR.
+  - type: dnf
+    repos:
+      copr:
+        - alternateved/keyd
+    install:
+      packages:
+        - keyd
+
+  # ── CachyOS kernel ───────────────────────────────────────────────────────────
+  # BEFORE enabling: you must handle Secure Boot. Either:
+  #   a) Disable Secure Boot in UEFI firmware settings, or
+  #   b) Enroll the CachyOS MOK signing key after first boot.
+  # Without this the system will refuse to boot the unsigned kernel.
+  #
+  # Uses a script instead of the dnf module because kernel-cachyos-core's
+  # %posttrans scriptlet calls dracut before depmod has run, failing the
+  # transaction. The script installs with --noscripts, runs depmod, then
+  # lets the initramfs module below regenerate properly.
+  - type: script
+    scripts:
+      - replace-kernel-cachyos.sh
+
+  # ── Kernel arguments ─────────────────────────────────────────────────────────
+  - type: kargs
+    kargs:
+      # Intel Panther Lake uses s2idle (S0ix / Modern Standby), not S3.
+      - mem_sleep_default=s2idle
+      # Disable NMI watchdog — saves power and reduces latency jitter.
+      - nowatchdog
+      # Clean boot output (errors still shown via journalctl).
+      - quiet
+
+  # ── Flatpaks ─────────────────────────────────────────────────────────────────
+  - type: default-flatpaks
+    configurations:
+      - notify: true
+        scope: system
+        install:
+          - io.github.zen_browser.zen
+          - com.valvesoftware.Steam
+          - com.github.tchx84.Flatseal
+          - dev.vencord.Vesktop
+          - net.davidotek.pupgui2           # ProtonUp-Qt: manage Proton/Wine versions for Steam
+          - io.github.celluloid_player.Celluloid  # mpv frontend, Wayland-native
+
+  # ── Homebrew ─────────────────────────────────────────────────────────────────
+  - type: brew
+
+  # ── System files ─────────────────────────────────────────────────────────────
+  # Deploys everything in files/system/ into /.
+  # Includes: startniri launcher, niri default config, niri.desktop session
+  # entry, and the portal routing config that fixes popup/file picker issues.
+  - type: files
+    files:
+      - source: system
+        destination: /
+
+  # ── Systemd units ────────────────────────────────────────────────────────────
+  - type: systemd
+    system:
+      enabled:
+        - sddm
+        - tuned
+        - bluetooth
+        - fprintd
+        - keyd
+
+  # ── Cleanup + initramfs ──────────────────────────────────────────────────────
+  - type: script
+    scripts:
+      - set-default-shell.sh
+      - cleanup-repos.sh
+
+  # Regenerate initramfs last — picks up all kernel/dracut changes from above.
+  - type: initramfs
