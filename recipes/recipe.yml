@@ -16,7 +16,7 @@ modules:
       VARIANT: framework
 
   # ── Terra repo (Noctalia) ────────────────────────────────────────────────────
-  # Terra is Fyra Labs' repo; it ships noctalia-shell and the QuickShell runtime.
+  # Terra is Fyra Labs' repo; it ships noctalia-nightly (v5, native C++).
   # This script follows the official install method (installs terra-release, which
   # sets up the persistent repo file and GPG key).
   - type: script
@@ -35,15 +35,14 @@ modules:
         - xwayland-satellite          # rootless Xwayland for legacy X11 apps
 
         # ── Noctalia shell ─────────────────────────────────────────────────────
-        # Handles: bar, launcher, lock screen, idle, notifications, wallpaper,
-        # OSD, widgets, dock, and multi-monitor. Installed via Terra (setup above).
-        - noctalia-shell
-        - brightnessctl               # laptop backlight control (Noctalia dep)
-        - ImageMagick                 # wallpaper processing (Noctalia dep)
-        - python3                     # template processing (Noctalia dep)
-        - git                         # plugin/update support (Noctalia dep)
-        - cliphist                    # clipboard history (Noctalia dep)
-        - wlsunset                    # night light / colour temperature (Noctalia dep)
+        # v5 nightly: native C++, no QuickShell dependency. Installed via Terra.
+        - noctalia-nightly
+        - brightnessctl               # laptop backlight control
+        - ImageMagick                 # wallpaper processing
+        - python3                     # template processing
+        - git                         # plugin/update support
+        - cliphist                    # clipboard history
+        - wlsunset                    # night light / colour temperature
 
         # ── XDG Desktop Portals ────────────────────────────────────────────────
         # The niri-portals.conf file (deployed below) routes each portal to the right backend.
