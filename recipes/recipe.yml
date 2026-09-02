@@ -77,15 +77,14 @@ modules:
         # ── Wayland utilities ──────────────────────────────────────────────────
         - wl-clipboard                # wl-copy / wl-paste (cliphist + nvim + CLI)
         - playerctl                   # MPRIS media key control
-        - waylock                     # screen locker
+        - swaylock                    # screen locker
 
         # ── Wayland + Qt compatibility ─────────────────────────────────────────
         - qt5-qtwayland
         - qt6-qtwayland
         - qt5ct                       # Qt5 style config tool
         - qt6ct                       # Qt6 style config tool
-        - adwaita-qt5                 # Adwaita theme for Qt5 apps (matches GTK)
-        - adwaita-qt6                 # Adwaita theme for Qt6 apps
+        - adwaita-qt                  # Adwaita theme for Qt5 apps (matches GTK)
         - xdg-utils
 
         # ── Authentication agent ───────────────────────────────────────────────
