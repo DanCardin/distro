@@ -51,14 +51,12 @@ modules:
         - xdg-desktop-portal-wlr      # screenshare / screencopy for wlroots compositors
 
         # ── Display manager ────────────────────────────────────────────────────
-        - sddm
-        - sddm-themes
-        - qt5-qtgraphicaleffects
-        - qt5-qtquickcontrols2
+        - greetd
+        - noctalia-greeter
 
         # ── Secrets / keyring ──────────────────────────────────────────────────
         # gnome-keyring handles Secret Service API + SSH agent.
-        # PAM integration (deployed below) auto-unlocks on SDDM login and
+        # PAM integration (deployed below) auto-unlocks on greetd login and
         # sets SSH_AUTH_SOCK, replacing the fish-ssh-agent plugin.
         - gnome-keyring
         - libsecret
@@ -74,10 +72,20 @@ modules:
         # ── Screenshots ────────────────────────────────────────────────────────
         - grim
         - slurp
+        - swappy                      # screenshot annotation
+
+        # ── Wayland utilities ──────────────────────────────────────────────────
+        - wl-clipboard                # wl-copy / wl-paste (cliphist + nvim + CLI)
+        - playerctl                   # MPRIS media key control
+        - waylock                     # screen locker
 
         # ── Wayland + Qt compatibility ─────────────────────────────────────────
         - qt5-qtwayland
         - qt6-qtwayland
+        - qt5ct                       # Qt5 style config tool
+        - qt6ct                       # Qt6 style config tool
+        - adwaita-qt5                 # Adwaita theme for Qt5 apps (matches GTK)
+        - adwaita-qt6                 # Adwaita theme for Qt6 apps
         - xdg-utils
 
         # ── Authentication agent ───────────────────────────────────────────────
@@ -89,22 +97,26 @@ modules:
         # ── Networking ─────────────────────────────────────────────────────────
         - NetworkManager-openvpn
         - NetworkManager-openconnect
+        - iwd                         # Intel WiFi daemon (better power mgmt than wpa_supplicant)
 
         # ── Bluetooth ──────────────────────────────────────────────────────────
         - bluez
         - blueman
 
+        # ── Thunderbolt ────────────────────────────────────────────────────────
+        - bolt                        # Thunderbolt device authorization
+
         # ── Power management ───────────────────────────────────────────────────
-        # tuned handles the actual power profiles; tuned-ppd exposes them via
-        # the standard power-profiles-daemon DBus API that Noctalia queries.
-        - tuned
-        - tuned-ppd
+        - power-profiles-daemon
+        - thermald                    # Intel thermal management daemon
         - upower
         - powerstat
 
         # ── Intel GPU: Panther Lake (Xe3 iGPU, xe DRM driver) ─────────────────
         - intel-media-driver          # VA-API hardware video decode (iHD)
         - libva-utils                 # `vainfo` to verify VA-API is working
+        - mesa-vulkan-drivers         # Vulkan for Intel iGPU (Steam/Proton)
+        - vulkan-loader
 
         # ── Fingerprint reader ─────────────────────────────────────────────────
         - fprintd
@@ -135,10 +147,13 @@ modules:
         - delta                       # better diff / git pager
         - dust                        # better du
         - ripgrep                     # better grep (aliased as ag)
+        - fd-find                     # better find
+        - fzf                         # fuzzy finder
 
         # ── System utilities ───────────────────────────────────────────────────
         - just                        # task runner (ublue convention; see justfile)
         - steam-devices               # controller / gamepad udev rules
+        - kanshi                      # Wayland display layout daemon (auto-switches on monitor plug/unplug)
 
         # ── Fonts ──────────────────────────────────────────────────────────────
         - google-noto-fonts-common
@@ -186,6 +201,9 @@ modules:
       - mem_sleep_default=s2idle
       # Disable NMI watchdog — saves power and reduces latency jitter.
       - nowatchdog
+      # Enable IOMMU for Thunderbolt security; pt mode avoids overhead on non-DMA regions.
+      - intel_iommu=on
+      - iommu=pt
       # Clean boot output (errors still shown via journalctl).
       - quiet
 
@@ -218,11 +236,16 @@ modules:
   - type: systemd
     system:
       enabled:
-        - sddm
-        - tuned
+        - greetd
+        - power-profiles-daemon
+        - thermald
         - bluetooth
+        - bolt
+        - iwd
         - fprintd
         - keyd
+      masked:
+        - wpa_supplicant
 
   # ── Cleanup + initramfs ──────────────────────────────────────────────────────
   - type: script
