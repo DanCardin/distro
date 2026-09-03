@@ -84,7 +84,7 @@ modules:
         - qt6-qtwayland
         - qt5ct                       # Qt5 style config tool
         - qt6ct                       # Qt6 style config tool
-        - adwaita-qt                  # Adwaita theme for Qt5 apps (matches GTK)
+        - qt6gtk2                     # GTK2/3 style plugin for Qt6 (used by qt6ct)
         - xdg-utils
 
         # ── Authentication agent ───────────────────────────────────────────────
