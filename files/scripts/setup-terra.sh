@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Installs terra-release, which sets up the Terra repo file and GPG key.
-# This follows the official Fyra Labs installation method for Fedora.
-# The repo persists in the image for post-install updates via `bootc upgrade`.
+# Bootstrap Terra repo.  The terra-release and terra-gpg-keys packages are
+# only reachable via the metalink mirror, not the direct baseurl, so we must
+# deploy the metalink-based .repo first before installing them.
 
 set -oue pipefail
 
-dnf install -y \
-    --nogpgcheck \
-    --repofrompath "terra,https://repos.fyralabs.com/terra${OS_VERSION}" \
-    terra-release
+curl -fsSL \
+    "https://raw.githubusercontent.com/terrapkg/packages/f${OS_VERSION}/anda/terra/release/terra.repo" \
+    -o /etc/yum.repos.d/terra.repo
+
+dnf install -y --nogpgcheck terra-gpg-keys terra-release
