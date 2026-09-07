@@ -1,0 +1,49 @@
+name: Build ISO
+
+on:
+  workflow_run:
+    workflows: [bluebuild]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-iso:
+    name: Build ISO
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Build ISO
+        uses: jasonN3/build-container-installer@v1
+        id: build
+        with:
+          arch: x86_64
+          image_name: distro
+          image_repo: ghcr.io/dancardin
+          image_tag: latest
+          image_signed: true
+          iso_name: distro.iso
+          enable_cache_dnf: true
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: distro-iso
+          path: |
+            ${{ steps.build.outputs.iso_path }}
+            ${{ steps.build.outputs.iso_path }}-CHECKSUM
+          retention-days: 7
+          if-no-files-found: error
