@@ -27,7 +27,7 @@ jobs:
           swap-storage: true
 
       - name: Build ISO
-        uses: jasonN3/build-container-installer@v1
+        uses: jasonN3/build-container-installer@main
         id: build
         with:
           arch: x86_64
