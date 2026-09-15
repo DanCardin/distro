@@ -118,6 +118,7 @@ modules:
 
         # ── Fingerprint reader ─────────────────────────────────────────────────
         - fprintd
+        - fprintd-pam                 # PAM module for fingerprint auth at login/sudo
 
         # ── File management ────────────────────────────────────────────────────
         - thunar
@@ -217,6 +218,7 @@ modules:
           - dev.vencord.Vesktop
           - net.davidotek.pupgui2           # ProtonUp-Qt: manage Proton/Wine versions for Steam
           - io.github.celluloid_player.Celluloid  # mpv frontend, Wayland-native
+          - com.github.wwmm.easyeffects         # PipeWire audio effects / EQ for speaker tuning
 
   # ── Homebrew ─────────────────────────────────────────────────────────────────
   - type: brew
