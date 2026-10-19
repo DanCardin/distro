@@ -179,25 +179,13 @@ modules:
       packages:
         - keyd
 
-  # ── CachyOS kernel ───────────────────────────────────────────────────────────
-  # BEFORE enabling: you must handle Secure Boot. Either:
-  #   a) Disable Secure Boot in UEFI firmware settings, or
-  #   b) Enroll the CachyOS MOK signing key after first boot.
-  # Without this the system will refuse to boot the unsigned kernel.
-  #
-  # Uses a script instead of the dnf module because kernel-cachyos-core's
-  # %posttrans scriptlet calls dracut before depmod has run, failing the
-  # transaction. The script installs with --noscripts, runs depmod, then
-  # lets the initramfs module below regenerate properly.
-  - type: script
-    scripts:
-      - replace-kernel-cachyos.sh
-
   # ── Kernel arguments ─────────────────────────────────────────────────────────
   - type: kargs
     kargs:
       # Intel Panther Lake uses s2idle (S0ix / Modern Standby), not S3.
       - mem_sleep_default=s2idle
+      # Enable PSR
+      - xe.enable_psr=1
       # Disable NMI watchdog — saves power and reduces latency jitter.
       - nowatchdog
       # Enable IOMMU for Thunderbolt security; pt mode avoids overhead on non-DMA regions.
@@ -205,6 +193,14 @@ modules:
       - iommu=pt
       # Clean boot output (errors still shown via journalctl).
       - quiet
+      # Prevent chassis shifts/interrupts from waking laptop
+      - acpi.ec_no_wakeup=1
+      # Bundle RCU callbacks together to let CPU cores drop to deeper C-states
+      - rcutree.enable_rcu_lazy=1
+# Fixes the VM writeback timeout warning (forces dirty pages to cache longer)
+      - vm.dirty_writeback_centisecs=1500
+      # Ensures the hardware clock alarm wakes the CPU to execute hibernation transition
+      - rtc_cmos.use_acpi_alarm=1
 
   # ── Flatpaks ─────────────────────────────────────────────────────────────────
   - type: default-flatpaks
