@@ -78,6 +78,7 @@ modules:
         - wl-clipboard                # wl-copy / wl-paste (cliphist + nvim + CLI)
         - playerctl                   # MPRIS media key control
         - swaylock                    # screen locker
+        - fuse-libs
 
         # ── Wayland + Qt compatibility ─────────────────────────────────────────
         - qt5-qtwayland
