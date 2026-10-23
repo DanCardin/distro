@@ -109,7 +109,7 @@ modules:
         - power-profiles-daemon
         - thermald                    # Intel thermal management daemon
         - upower
-        - powerstat
+        - powertop
 
         # ── Intel GPU: Panther Lake (Xe3 iGPU, xe DRM driver) ─────────────────
         - intel-media-driver          # VA-API hardware video decode (iHD)
@@ -189,6 +189,7 @@ modules:
       - xe.enable_psr=1
       # Disable NMI watchdog — saves power and reduces latency jitter.
       - nowatchdog
+      - nmi_watchdog=0
       # Enable IOMMU for Thunderbolt security; pt mode avoids overhead on non-DMA regions.
       - intel_iommu=on
       - iommu=pt

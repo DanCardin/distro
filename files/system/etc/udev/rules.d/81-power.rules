@@ -1,0 +1,1 @@
+SUBSYSTEM=="pci", TEST=="power/control", ATTR{power/control}="auto"
