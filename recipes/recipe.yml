@@ -2,7 +2,7 @@
 name: distro
 description: framework
 base-image: ghcr.io/ublue-os/base-main
-image-version: 44
+image-version: 45
 
 modules:
   # ── Image signing ────────────────────────────────────────────────────────────
@@ -31,8 +31,13 @@ modules:
     install:
       packages:
         # ── Compositor ─────────────────────────────────────────────────────────
-        - niri
-        - xwayland-satellite          # rootless Xwayland for legacy X11 apps
+        # Umbriel nightly (wlroots, scrolling layout) from Terra. It provides
+        # the start-umbriel session and lazy built-in Xwayland.
+        - umbriel-nightly
+        - xorg-x11-server-Xwayland    # Xwayland binary used by umbriel's lazy X11 support
+
+        # ── Terminal ───────────────────────────────────────────────────────────
+        - alacritty                   # terminal launched by Mod+T
 
         # ── Noctalia shell ─────────────────────────────────────────────────────
         # v5 nightly: native C++, no QuickShell dependency. Installed via Terra.
@@ -45,10 +50,13 @@ modules:
         - wlsunset                    # night light / colour temperature
 
         # ── XDG Desktop Portals ────────────────────────────────────────────────
-        # The niri-portals.conf file (deployed below) routes each portal to the right backend.
+        # The umbriel backend package ships its own umbriel-portals.conf with
+        # default=umbriel;gtk. That routes ScreenCast, Screenshot, and
+        # InputCapture to Umbriel and the file picker and similar portals to
+        # gtk. No extra portal override is needed.
         - xdg-desktop-portal
         - xdg-desktop-portal-gtk      # file picker, colours, settings, most things
-        - xdg-desktop-portal-wlr      # screenshare / screencopy for wlroots compositors
+        - xdg-desktop-portal-umbriel-nightly  # screencast / screenshot / input capture
 
         # ── Display manager ────────────────────────────────────────────────────
         - greetd
@@ -88,8 +96,8 @@ modules:
         - xdg-utils
 
         # ── Authentication agent ───────────────────────────────────────────────
-        # polkit-gnome registers an XDG autostart entry; niri-session picks it
-        # up automatically so GUI sudo prompts work out of the box.
+        # xfce-polkit registers an XDG autostart entry; the systemd graphical
+        # session target starts it so GUI sudo prompts work out of the box.
         - polkit
         - xfce-polkit                 # polkit agent for non-GNOME sessions (replaces polkit-gnome on F42)
 
@@ -185,8 +193,6 @@ modules:
     kargs:
       # Intel Panther Lake uses s2idle (S0ix / Modern Standby), not S3.
       - mem_sleep_default=s2idle
-      # Enable PSR
-      - xe.enable_psr=1
       # Disable NMI watchdog — saves power and reduces latency jitter.
       - nowatchdog
       - nmi_watchdog=0
@@ -223,8 +229,7 @@ modules:
 
   # ── System files ─────────────────────────────────────────────────────────────
   # Deploys everything in files/system/ into /.
-  # Includes: startniri launcher, niri default config, niri.desktop session
-  # entry, and the portal routing config that fixes popup/file picker issues.
+  # Includes the Umbriel default config (/etc/xdg/umbriel/config.toml).
   - type: files
     files:
       - source: system

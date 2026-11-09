@@ -16,4 +16,4 @@ qemu:
 		ghcr.io/osbuild/bootc-image-builder:latest \
 		--type qcow2 \
 		--local \
-		localhost/noctalia-niri:latest
+		localhost/distro:latest

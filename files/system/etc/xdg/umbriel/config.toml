@@ -1,0 +1,312 @@
+# System-wide default Umbriel config.
+# Users override this by creating ~/.config/umbriel/config.toml
+#
+# This is the Umbriel replacement for the previous niri configuration.
+# Key choices:
+#  - Noctalia is the shell: it is started by Umbriel, provides the bar,
+#    launcher, lock screen, wallpaper, OSDs, and screenshots.
+#  - Umbriel's built-in lazy Xwayland replaces xwayland-satellite.
+#  - Keybinds and input settings follow the local ~/.config/niri/config.kdl,
+#    not the older system-wide default that shipped in the repo.
+#  - Appearance keeps the local niri look: 10 px rounded corners and no
+#    window border, with Noctalia's recommended blur.
+#
+# Full config reference: https://docs.noctalia.dev/umbriel/
+# Validate changes with: umbriel config validate
+
+[general]
+# Noctalia is the desktop shell. Do not also launch it from
+# /etc/xdg/autostart, or it will start twice.
+# xfce-polkit is started explicitly because its desktop entry has
+# OnlyShowIn=XFCE, so the XDG autostart generator skips it under Umbriel.
+# The local niri config started it explicitly for the same reason.
+autostart = ["noctalia", "/usr/libexec/xfce-polkit"]
+
+# Umbriel starts Xwayland lazily when the first X11 application connects.
+xwayland = true
+
+# The niri config only showed its keybind overlay on request.
+show_cheatsheet = false
+
+[environment]
+# Opt Electron apps (VS Code, Obsidian, etc.) into native Wayland.
+# Umbriel owns DISPLAY, so niri's "DISPLAY :0" override is gone.
+ELECTRON_OZONE_PLATFORM_HINT = "auto"
+
+[input.keyboard]
+# Empty layout/variant/options/model makes Umbriel read the system keymap
+# from org.freedesktop.locale1, the same source niri used.
+# Configure it with: localectl set-x11-keymap us
+numlock_toggle = true
+
+[input.touchpad]
+# Match the local niri config: natural scrolling, clickfinger, half-speed
+# scrolling, and no tap-to-click.
+tap = false
+natural_scroll = true
+click_method = "clickfinger"
+scroll_factor = 0.5
+
+[output.eDP-1]
+# Local niri config enabled variable refresh rate on the laptop panel.
+vrr = "always"
+
+[layout]
+# niri (local config): gaps 6
+gap = 6
+
+# niri: preset-column-widths { 0.33333, 0.5, 0.66667 }
+extent_presets = [0.333, 0.5, 0.667]
+
+[layout.scrolling]
+# niri: default-column-width { proportion 0.5; }
+default_extent_fraction = 0.5
+# niri: center-focused-column "never"
+center_focused = "never"
+
+[appearance]
+# The local niri config used server-side decorations, 10 px rounded corners,
+# and no window border or focus ring. Keep that look.
+prefer_no_csd = true
+border_width = 0
+outer_border_width = 0
+corner_radius = 10
+
+[appearance.blur]
+# Noctalia's recommended Umbriel blur settings.
+enabled = true
+optimized = true
+passes = 2
+radius = 3
+noise = 0.02
+brightness = 0.9
+contrast = 0.9
+saturation = 1.1
+
+[appearance.shadow]
+# niri: shadow { on; softness 20; spread 3; offset x=0 y=4; }
+# Umbriel has no shadow "spread" setting.
+enabled = true
+softness = 20
+offset_x = 0
+offset_y = 4
+
+[colors.border]
+# Local niri theme accents (unused while border_width = 0).
+focused = "#89B4FAFF"
+unfocused = "#1E1E2EFF"
+
+# ── Window rules ─────────────────────────────────────────────────────────────
+
+# Blur every window, using the cached background blur. This is the blur half
+# of Noctalia's Umbriel integration guide.
+[[window_rule]]
+blur = true
+blur_optimized = true
+
+# Noctalia's settings window is a normal toplevel; float it at a predictable
+# size rather than tiling it.
+[[window_rule]]
+match.app_id = "^dev.noctalia.Noctalia$"
+default_floating = true
+default_floating_size_px = { width = 1020, height = 900 }
+
+# The portal's screen/window share picker.
+[[window_rule]]
+match.app_id = "^dev.noctalia.UmbrielSharePicker$"
+default_floating = true
+default_floating_size_px = { width = 800, height = 600 }
+
+# niri: float Firefox picture-in-picture windows.
+[[window_rule]]
+match.app_id = "firefox$"
+match.title = "^Picture-in-Picture$"
+default_floating = true
+
+# niri let wezterm choose its own column width:
+#   window-rule { match app-id=r#"^org\.wezfurlong\.wezterm$"#; default-column-width {} }
+# Umbriel has no per-window "let the client choose" extent. The global
+# default_extent_fraction above applies instead. To pin wezterm to a fixed
+# width, add:
+#   [[window_rule]]
+#   match.app_id = "^org[.]wezfurlong[.]wezterm$"
+#   default_scrolling_extent = 0.5
+
+# ── Layer rules ──────────────────────────────────────────────────────────────
+
+# Noctalia's bar, notifications, dock, panels, OSD, and desktop widgets.
+# Noctalia publishes blur regions itself when ext-background-effects is
+# available, so these rules only tune how Umbriel applies them.
+[[layer_rule]]
+match.namespace = '^noctalia-(bar-[^"]+|notification|dock|panel|attached-panel|osd|desktop-widget-[^"]*)$'
+blur = true
+blur_ignore_alpha = 0.6
+blur_popups = true
+
+# Panels, the dock, notifications, and OSDs open over windows. Blur the live
+# content behind them instead of the cached wallpaper. The bar and desktop
+# widgets sit on the wallpaper, so they keep the cheaper optimized path.
+[[layer_rule]]
+match.namespace = '^noctalia-(notification|dock|panel|attached-panel|osd)$'
+blur_optimized = false
+
+# ── Keybinds ─────────────────────────────────────────────────────────────────
+# Defining [keybinds] replaces Umbriel's built-in bind set, so every active
+# binding is listed here. Actions: https://docs.noctalia.dev/umbriel/actions/
+
+[keybinds]
+
+# ── Noctalia ─────────────────────────────────────────────────────────────────
+"Mod+Space" = { action = "spawn noctalia msg panel-toggle launcher", repeat = false }
+"Mod+S" = { action = "spawn noctalia msg panel-toggle control-center", repeat = false }
+"Mod+Shift+Comma" = { action = "spawn noctalia msg settings-toggle", repeat = false }
+"Alt+Tab" = { action = "spawn noctalia msg window-switcher hold", repeat = false }
+"Alt+Shift+Tab" = { action = "spawn noctalia msg window-switcher hold reverse", repeat = false }
+
+# ── Overview and windows ─────────────────────────────────────────────────────
+"Mod+Shift+Slash" = { action = "cheatsheet-open", repeat = false }
+"Mod+O" = { action = "overview-toggle", repeat = false }
+"Mod+Q" = { action = "window-close", repeat = false }
+
+# ── Launch ───────────────────────────────────────────────────────────────────
+# Local niri config launches alacritty.
+"Mod+T" = { action = "spawn alacritty", repeat = false }
+
+# ── Audio ────────────────────────────────────────────────────────────────────
+# Routed through Noctalia so its OSDs appear. Safe while the session is locked.
+"XF86AudioRaiseVolume" = { action = "spawn noctalia msg volume-up 5", allow_when_locked = true }
+"XF86AudioLowerVolume" = { action = "spawn noctalia msg volume-down 5", allow_when_locked = true }
+"XF86AudioMute" = { action = "spawn noctalia msg volume-mute", allow_when_locked = true, repeat = false }
+"XF86AudioMicMute" = { action = "spawn noctalia msg mic-mute", allow_when_locked = true, repeat = false }
+
+# ── Brightness ───────────────────────────────────────────────────────────────
+"XF86MonBrightnessUp" = { action = "spawn noctalia msg brightness-up 10", allow_when_locked = true }
+"XF86MonBrightnessDown" = { action = "spawn noctalia msg brightness-down 10", allow_when_locked = true }
+
+# ── Screenshots ──────────────────────────────────────────────────────────────
+# Noctalia handles capture, annotation, the Save path, and clipboard policy.
+# Configure those under [shell.screenshot] in Noctalia's settings.toml.
+"Print" = { action = "spawn noctalia msg screenshot-region", repeat = false }
+"Ctrl+Print" = { action = "spawn noctalia msg screenshot-fullscreen", repeat = false }
+"Alt+Print" = { action = "spawn noctalia msg screenshot-window", repeat = false }
+
+# ── Focus ────────────────────────────────────────────────────────────────────
+# Local niri config: left/right focus columns, up/down focus windows and fall
+# through to the next/previous workspace at the edge.
+"Mod+Left" = "window-focus-left"
+"Mod+Down" = "window-focus-or-workspace-down"
+"Mod+Up" = "window-focus-or-workspace-up"
+"Mod+Right" = "window-focus-right"
+"Mod+H" = "window-focus-left"
+"Mod+J" = "window-focus-or-workspace-down"
+"Mod+K" = "window-focus-or-workspace-up"
+"Mod+L" = "window-focus-right"
+
+# ── Move ─────────────────────────────────────────────────────────────────────
+# Local niri config: arrows move within the column, J/K fall through to the
+# next/previous workspace.
+"Mod+Ctrl+Left" = "column-move-left"
+"Mod+Ctrl+Down" = "window-move-down"
+"Mod+Ctrl+Up" = "window-move-up"
+"Mod+Ctrl+Right" = "column-move-right"
+"Mod+Ctrl+H" = "column-move-left"
+"Mod+Ctrl+J" = "window-move-or-workspace-down"
+"Mod+Ctrl+K" = "window-move-or-workspace-up"
+"Mod+Ctrl+L" = "column-move-right"
+
+"Mod+Home" = "column-focus-first"
+"Mod+End" = "column-focus-last"
+"Mod+Ctrl+Home" = "column-move-to-first"
+"Mod+Ctrl+End" = "column-move-to-last"
+
+# ── Workspaces ───────────────────────────────────────────────────────────────
+# niri focus-workspace-down/up and move-column-to-workspace-down/up.
+"Mod+Page_Down" = "workspace-next"
+"Mod+Page_Up" = "workspace-previous"
+"Mod+U" = "workspace-next"
+"Mod+I" = "workspace-previous"
+"Mod+Ctrl+U" = "column-move-to-workspace-next"
+"Mod+Ctrl+I" = "column-move-to-workspace-previous"
+
+# niri move-workspace-down/up.
+"Mod+Shift+Page_Down" = "workspace-move-down"
+"Mod+Shift+Page_Up" = "workspace-move-up"
+"Mod+Shift+U" = "workspace-move-down"
+"Mod+Shift+I" = "workspace-move-up"
+
+# niri's cooldown-ms=150 wheel bindings.
+"Mod+WheelDown" = { action = "workspace-next", cooldown_ms = 150 }
+"Mod+WheelUp" = { action = "workspace-previous", cooldown_ms = 150 }
+"Mod+Ctrl+WheelDown" = { action = "column-move-to-workspace-next", cooldown_ms = 150 }
+"Mod+Ctrl+WheelUp" = { action = "column-move-to-workspace-previous", cooldown_ms = 150 }
+
+"Mod+WheelRight" = "window-focus-right"
+"Mod+WheelLeft" = "window-focus-left"
+"Mod+Ctrl+WheelRight" = "column-move-right"
+"Mod+Ctrl+WheelLeft" = "column-move-left"
+
+"Mod+1" = "workspace-switch 1"
+"Mod+2" = "workspace-switch 2"
+"Mod+3" = "workspace-switch 3"
+"Mod+4" = "workspace-switch 4"
+"Mod+5" = "workspace-switch 5"
+"Mod+6" = "workspace-switch 6"
+"Mod+7" = "workspace-switch 7"
+"Mod+8" = "workspace-switch 8"
+"Mod+9" = "workspace-switch 9"
+"Mod+Ctrl+1" = "column-move-to-workspace 1"
+"Mod+Ctrl+2" = "column-move-to-workspace 2"
+"Mod+Ctrl+3" = "column-move-to-workspace 3"
+"Mod+Ctrl+4" = "column-move-to-workspace 4"
+"Mod+Ctrl+5" = "column-move-to-workspace 5"
+"Mod+Ctrl+6" = "column-move-to-workspace 6"
+"Mod+Ctrl+7" = "column-move-to-workspace 7"
+"Mod+Ctrl+8" = "column-move-to-workspace 8"
+"Mod+Ctrl+9" = "column-move-to-workspace 9"
+
+# ── Layout ───────────────────────────────────────────────────────────────────
+# niri consume-or-expel-window-left/right.
+"Mod+BracketLeft" = "window-consume-or-expel-left"
+"Mod+BracketRight" = "window-consume-or-expel-right"
+
+# niri consume-window-into-column: stack the focused window into the column
+# to the right.
+"Mod+Comma" = "window-consume-right"
+# niri expel-window-from-column: split the focused window out to the right.
+# Umbriel has no expel-only action, so window-move-right expels when the
+# column has another window and otherwise moves the column into its neighbor.
+"Mod+Period" = "window-move-right"
+
+# niri switch-preset-column-width / switch-preset-window-height.
+"Mod+R" = "window-cycle-primary-extent"
+"Mod+Shift+R" = "window-cycle-secondary-extent"
+# Approximation: niri reset-window-height restored the automatic height.
+# Umbriel has no per-row "automatic" reset, so fill the column height.
+"Mod+Ctrl+R" = "window-set-secondary-extent 1.0"
+
+# niri maximize-column / fullscreen-window / expand-column-to-available-width.
+"Mod+F" = "window-toggle-maximize"
+"Mod+Shift+F" = "window-toggle-fullscreen"
+"Mod+Ctrl+F" = "window-set-primary-extent 1.0"
+
+# niri center-column. (center-visible-columns has no Umbriel equivalent.)
+"Mod+C" = "column-center"
+
+# niri set-column-width / set-window-height in 10% steps.
+"Mod+Minus" = "window-modify-primary-extent -0.1"
+"Mod+Equal" = "window-modify-primary-extent 0.1"
+"Mod+Shift+Minus" = "window-modify-secondary-extent -0.1"
+"Mod+Shift+Equal" = "window-modify-secondary-extent 0.1"
+
+"Mod+V" = { action = "window-toggle-floating", repeat = false }
+"Mod+Shift+V" = { action = "window-focus-switch-floating", repeat = false }
+"Mod+W" = { action = "column-toggle-tabbed", repeat = false }
+
+# ── System ───────────────────────────────────────────────────────────────────
+# niri allow-inhibiting=false: keep this binding usable while a client has
+# requested keyboard-shortcut inhibition.
+"Mod+Escape" = { action = "shortcuts-inhibit-toggle", allow_when_inhibited = true, repeat = false }
+# niri quit: show the confirmation prompt rather than exiting immediately.
+"Mod+Shift+E" = "session-quit"
+"Ctrl+Alt+Delete" = "session-quit"
+"Mod+Shift+P" = "dpms-off"
