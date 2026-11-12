@@ -166,17 +166,17 @@ modules:
         # ── Fonts ──────────────────────────────────────────────────────────────
         - google-noto-fonts-common
         - google-noto-emoji-fonts
-        - fontawesome-fonts
-        - jetbrains-mono-fonts
-        - adobe-source-code-pro-fonts
-        # For Nerd Font icon glyphs (used by many shell/bar themes), install
-        # via brew post-boot:
-        #   brew install --cask font-symbols-only-nerd-font
-        #   brew install --cask font-sauce-code-pro-nerd-font  # Source Code Pro + Nerd glyphs
 
         # ── Icons ──────────────────────────────────────────────────────────────
         - papirus-icon-theme
         - hicolor-icon-theme
+
+  - type: fonts
+    fonts:
+      nerd-fonts:
+        - NerdFontsSymbolsOnly
+        - SourceCodePro
+        - JetBrainsMono
 
   # ── keyd (kernel-level key remapper) ─────────────────────────────────────────
   # Not in standard Fedora repos; requires the alternateved COPR.
